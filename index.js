@@ -41,11 +41,19 @@ io.on('connection', (socket) => {
         console.log(`User ${name} connected`);
     });
 
-
     socket.on('join-game', (data) => {
         const gameId = data.gameId;
         const playerName = data.playerName;
         let game = currentGames.find((g) => g.id === gameId);
+        if (gameId === "new room") {
+            game = currentGames.find(g => g.players.length < 2);
+            if (!game) {
+                const newGameId = currentGames.reduce((maxId, game) => Math.max(maxId, game.id), 0) + 1;
+                console.log("newGameId: ", newGameId)
+                game = {id: newGameId, players: []};
+                currentGames.push(game);
+            }
+        }
         if (!game) {
             game = {id: gameId, players: []};
             currentGames.push(game);
@@ -57,10 +65,8 @@ io.on('connection', (socket) => {
 
         game.players.push({name: playerName, id: socket.id});
 
-
         const [player1, player2] = game.players.map((p) => p.name);
         const [id1, id2] = game.players.map((p) => p.id);
-
         socket.to(id1).to(id2).emit('join-game-success', {gameId: game.id, players: game.players});
 
         if (game.players.length === 2) {
@@ -73,16 +79,17 @@ io.on('connection', (socket) => {
     socket.on('make-move', (data) => {
         const gameId = data.gameId;
         const playerId = socket.id;
+        const userMove = data.userMove;
         const board = data.board
         console.log(gameId, playerId, board)
-
-
         const game = currentGames.find((g) => g.id === gameId);
-
+        game.board = board;
+        const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
+        const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+        game.userMove = game.players[nextPlayerIndex].name;
         const playerIds = game.players.map((p) => p.id);
-
         playerIds.forEach((id) => {
-            io.to(id).emit('update-game-state', {gameState: game.state});
+            io.to(id).emit('update-game-state', {gameId, board, userMove: game.userMove  });
         })
     })
 });
