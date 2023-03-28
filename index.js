@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
             currentGames.push(game);
         }
         if (game.players.length === 2) {
-            socket.emit('join-game-failed', 'too many players');
+            socket.emit('join-game-failed', 'too many players in this room');
             return
         }
 
@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
 
         const [player1, player2] = game.players.map((p) => p.name);
         const [id1, id2] = game.players.map((p) => p.id);
-        socket.to(id1).to(id2).emit('join-game-success', {gameId: game.id, players: game.players});
+        io.to(id1).to(id2).emit('join-game-success', {gameId: game.id, players: game.players});
 
         if (game.players.length === 2) {
             const firstPlayer = flipCoin() ? player1 : player2;
@@ -81,7 +81,6 @@ io.on('connection', (socket) => {
         const playerId = socket.id;
         const userMove = data.userMove;
         const board = data.board
-        console.log(gameId, playerId, board)
         const game = currentGames.find((g) => g.id === gameId);
         game.board = board;
         const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
@@ -89,9 +88,23 @@ io.on('connection', (socket) => {
         game.userMove = game.players[nextPlayerIndex].name;
         const playerIds = game.players.map((p) => p.id);
         playerIds.forEach((id) => {
-            io.to(id).emit('update-game-state', {gameId, board, userMove: game.userMove  });
+            io.to(id).emit('update-game-state', {gameId, board, userMove: game.userMove});
         })
     })
+
+
+    socket.on('game-over', (data) => {
+        const gameId = data.gameId;
+        const info = data.info
+        let game = currentGames.find((g) => g.id === gameId);
+
+        const playerIds = game.players.map((p) => p.id);
+        playerIds.forEach((id) => {
+            io.to(id).emit('game-over', {gameId, info});
+        })
+    })
+
+
 });
 
 
