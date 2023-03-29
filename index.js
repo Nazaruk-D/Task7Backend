@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const http = require('http');
+const {findOrCreateGame} = require("./findOrCreateGame");
 const server = http.createServer(app);
 
 const corsOptions = {
@@ -20,7 +21,8 @@ const io = require('socket.io')(server, {
     }
 });
 
-let currentGames = [];
+let tikTakToe = [];
+let bullsAndCowsGames = [];
 
 
 io.on('connection', (socket) => {
@@ -43,52 +45,97 @@ io.on('connection', (socket) => {
 
     socket.on('join-game', (data) => {
         const gameId = data.gameId;
+        const gameName = data.gameName;
         const playerName = data.playerName;
-        let game = currentGames.find((g) => g.id === gameId);
-        if (gameId === "new room") {
-            game = currentGames.find(g => g.players.length < 2);
-            if (!game) {
-                const newGameId = currentGames.reduce((maxId, game) => Math.max(maxId, game.id), 0) + 1;
-                console.log("newGameId: ", newGameId)
-                game = {id: newGameId, players: []};
-                currentGames.push(game);
+
+        let game;
+        if (gameName === "bullsAndCows") {
+            game = findOrCreateGame(bullsAndCowsGames, gameName, gameId);
+        } else if (gameName === "tikTakToe") {
+            game = findOrCreateGame(tikTakToe, gameName, gameId);
+            if (gameName !== game.gameName) {
+                socket.emit('join-game-failed', 'You are trying to connect to another game');
+                return;
             }
         }
-        if (!game) {
-            game = {id: gameId, players: []};
-            currentGames.push(game);
-        }
+
         if (game.players.length === 2) {
             socket.emit('join-game-failed', 'too many players in this room');
-            return
+            return;
         }
 
         game.players.push({name: playerName, id: socket.id});
-
         const [player1, player2] = game.players.map((p) => p.name);
         const [id1, id2] = game.players.map((p) => p.id);
-        io.to(id1).to(id2).emit('join-game-success', {gameId: game.id, players: game.players});
-
+        io.to(id1).to(id2).emit('join-game-success', {gameId: game.id, gameName: game.gameName, players: game.players});
         if (game.players.length === 2) {
             const firstPlayer = flipCoin() ? player1 : player2;
-            io.to(id1).to(id2).emit('start-game', {gameId: game.id, players: game.players, userMove: firstPlayer});
+            io.to(id1).to(id2).emit('start-game', {
+                gameId: game.id,
+                gameName: game.gameName,
+                players: game.players,
+                userMove: firstPlayer
+            });
+        }
+    });
+
+    socket.on('game-preparation', (data) => {
+        const gameId = data.gameId;
+        const playerId = socket.id;
+        const gameName = data.gameName;
+        const number = data.number
+
+        console.log("GAMEPREPARATION data", data)
+
+        let game = bullsAndCowsGames.find((g) => g.id === gameId);
+        const [player1, player2] = game.players.map((p) => p.name);
+        const [id1, id2] = game.players.map((p) => p.id);
+        const firstPlayer = flipCoin() ? player1 : player2;
+
+        const playerIndex = game.players.findIndex((p) => p.id === playerId);
+
+        game.players[playerIndex].number = number;
+
+        if (game.players.every((p) => p.number !== undefined)) {
+            io.to(id1).to(id2).emit('start-game-move', {
+                gameId: game.id,
+                gameName: game.gameName,
+                players: game.players,
+                userMove: firstPlayer
+            });
+
+            // const index = bullsAndCowsGames.findIndex((g) => g.id === gameId);
+            // bullsAndCowsGames.splice(index, 1);
         }
 
-    });
+
+        // let game = bullsAndCowsGames.find((g) => g.id === gameId);
+        // const [player1, player2] = game.players.map((p) => p.name);
+        // const [id1, id2] = game.players.map((p) => p.id);
+
+
+    })
+
 
     socket.on('make-move', (data) => {
         const gameId = data.gameId;
         const playerId = socket.id;
-        const userMove = data.userMove;
+        const gameName = data.gameName;
         const board = data.board
-        const game = currentGames.find((g) => g.id === gameId);
+        let game;
+        if (gameName === "bullsAndCows") {
+            game = bullsAndCowsGames.find((g) => g.id === gameId);
+        } else if (gameName === "tikTakToe") {
+            game = tikTakToe.find((g) => g.id === gameId);
+        }
+
         game.board = board;
         const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
         const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
         game.userMove = game.players[nextPlayerIndex].name;
         const playerIds = game.players.map((p) => p.id);
         playerIds.forEach((id) => {
-            io.to(id).emit('update-game-state', {gameId, board, userMove: game.userMove});
+            io.to(id).emit('update-game-state', {gameId, board, gameName: game.gameName, userMove: game.userMove});
         })
     })
 
@@ -96,15 +143,20 @@ io.on('connection', (socket) => {
     socket.on('game-over', (data) => {
         const gameId = data.gameId;
         const info = data.info
-        let game = currentGames.find((g) => g.id === gameId);
+        const gameName = data.gameName;
+
+        let game;
+        if (gameName === "bullsAndCows") {
+            game = bullsAndCowsGames.find((g) => g.id === gameId);
+        } else if (gameName === "tikTakToe") {
+            game = tikTakToe.find((g) => g.id === gameId);
+        }
 
         const playerIds = game.players.map((p) => p.id);
         playerIds.forEach((id) => {
             io.to(id).emit('game-over', {gameId, info});
         })
     })
-
-
 });
 
 
