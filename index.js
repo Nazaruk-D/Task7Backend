@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const http = require('http');
 const {findOrCreateGame} = require("./findOrCreateGame");
+const {checkNumber} = require("./checkNumber");
 const server = http.createServer(app);
 
 const corsOptions = {
@@ -82,10 +83,7 @@ io.on('connection', (socket) => {
     socket.on('game-preparation', (data) => {
         const gameId = data.gameId;
         const playerId = socket.id;
-        const gameName = data.gameName;
         const number = data.number
-
-        console.log("GAMEPREPARATION data", data)
 
         let game = bullsAndCowsGames.find((g) => g.id === gameId);
         const [player1, player2] = game.players.map((p) => p.name);
@@ -93,7 +91,6 @@ io.on('connection', (socket) => {
         const firstPlayer = flipCoin() ? player1 : player2;
 
         const playerIndex = game.players.findIndex((p) => p.id === playerId);
-
         game.players[playerIndex].number = number;
 
         if (game.players.every((p) => p.number !== undefined)) {
@@ -101,19 +98,9 @@ io.on('connection', (socket) => {
                 gameId: game.id,
                 gameName: game.gameName,
                 players: game.players,
-                userMove: firstPlayer
+                userMove: firstPlayer,
             });
-
-            // const index = bullsAndCowsGames.findIndex((g) => g.id === gameId);
-            // bullsAndCowsGames.splice(index, 1);
         }
-
-
-        // let game = bullsAndCowsGames.find((g) => g.id === gameId);
-        // const [player1, player2] = game.players.map((p) => p.name);
-        // const [id1, id2] = game.players.map((p) => p.id);
-
-
     })
 
 
@@ -122,21 +109,29 @@ io.on('connection', (socket) => {
         const playerId = socket.id;
         const gameName = data.gameName;
         const board = data.board
+
         let game;
         if (gameName === "bullsAndCows") {
             game = bullsAndCowsGames.find((g) => g.id === gameId);
+            const {bulls, cows} = checkNumber(game, playerId, board);
+            const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
+            const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+            game.userMove = game.players[nextPlayerIndex].name;
+            const playerIds = game.players.map((p) => p.id);
+            playerIds.forEach((id) => {
+                io.to(id).emit('check-number-result', {gameId, board, gameName: game.gameName, userMove: game.userMove, bulls, cows});
+            })
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
+            game.board = board;
+            const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
+            const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+            game.userMove = game.players[nextPlayerIndex].name;
+            const playerIds = game.players.map((p) => p.id);
+            playerIds.forEach((id) => {
+                io.to(id).emit('update-game-state', {gameId, board, gameName: game.gameName, userMove: game.userMove});
+            })
         }
-
-        game.board = board;
-        const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
-        const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
-        game.userMove = game.players[nextPlayerIndex].name;
-        const playerIds = game.players.map((p) => p.id);
-        playerIds.forEach((id) => {
-            io.to(id).emit('update-game-state', {gameId, board, gameName: game.gameName, userMove: game.userMove});
-        })
     })
 
 
