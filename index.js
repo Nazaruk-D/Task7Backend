@@ -108,7 +108,11 @@ io.on('connection', (socket) => {
         const gameId = data.gameId;
         const playerId = socket.id;
         const gameName = data.gameName;
+        const userMove = data. userMove;
         const board = data.board
+
+
+        console.log("make-move: ", data)
 
         let game;
         if (gameName === "bullsAndCows") {
@@ -119,7 +123,7 @@ io.on('connection', (socket) => {
             game.userMove = game.players[nextPlayerIndex].name;
             const playerIds = game.players.map((p) => p.id);
             playerIds.forEach((id) => {
-                io.to(id).emit('check-number-result', {gameId, board, gameName: game.gameName, userMove: game.userMove, bulls, cows});
+                io.to(id).emit('check-number-result', {gameId, board, gameName: game.gameName, userMove, bulls, cows});
             })
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
