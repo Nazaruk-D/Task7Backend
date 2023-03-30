@@ -122,9 +122,15 @@ io.on('connection', (socket) => {
             const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
             game.userMove = game.players[nextPlayerIndex].name;
             const playerIds = game.players.map((p) => p.id);
-            playerIds.forEach((id) => {
-                io.to(id).emit('check-number-result', {gameId, board, gameName: game.gameName, userMove, bulls, cows});
-            })
+            if(bulls === 4) {
+                playerIds.forEach((id) => {
+                    io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMove, bulls, cows});
+                })
+            } else {
+                playerIds.forEach((id) => {
+                    io.to(id).emit('check-number-result', {gameId, board, gameName: game.gameName, userMove, bulls, cows});
+                })
+            }
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
             game.board = board;
