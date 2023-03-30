@@ -1,4 +1,4 @@
-function checkNumber(game, playerId, number) {
+function checkNumberBullsAndCows(game, playerId, number) {
     const playerIndex = game.players.findIndex((p) => p.id === playerId);
     let bulls = 0;
     let cows = 0;
@@ -12,4 +12,4 @@ function checkNumber(game, playerId, number) {
     return {bulls, cows};
 }
 
-module.exports = { checkNumber };
+module.exports = { checkNumberBullsAndCows };

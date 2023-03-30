@@ -3,7 +3,8 @@ const app = express();
 const cors = require('cors');
 const http = require('http');
 const {findOrCreateGame} = require("./findOrCreateGame");
-const {checkNumber} = require("./checkNumber");
+const {checkNumberBullsAndCows} = require("./checkNumberBullsAndCows");
+const {calculateWinner} = require("./calculateWinnerTikTakToe");
 const server = http.createServer(app);
 
 const corsOptions = {
@@ -110,14 +111,12 @@ io.on('connection', (socket) => {
         const gameName = data.gameName;
         const userMove = data. userMove;
         const board = data.board
-
-
-        console.log("make-move: ", data)
+        const stepNumber = data.stepNumber + 1
 
         let game;
         if (gameName === "bullsAndCows") {
             game = bullsAndCowsGames.find((g) => g.id === gameId);
-            const {bulls, cows} = checkNumber(game, playerId, board);
+            const {bulls, cows} = checkNumberBullsAndCows(game, playerId, board);
             const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
             const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
             game.userMove = game.players[nextPlayerIndex].name;
@@ -134,13 +133,20 @@ io.on('connection', (socket) => {
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
             game.board = board;
+            const winner = calculateWinner(board, userMove, stepNumber);
             const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
             const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
             game.userMove = game.players[nextPlayerIndex].name;
             const playerIds = game.players.map((p) => p.id);
-            playerIds.forEach((id) => {
-                io.to(id).emit('update-game-state', {gameId, board, gameName: game.gameName, userMove: game.userMove});
-            })
+            if(winner){
+                playerIds.forEach((id) => {
+                    io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMove: game.userMove, winner});
+                })
+            } else {
+                playerIds.forEach((id) => {
+                    io.to(id).emit('update-game-state', {gameId, board, gameName: game.gameName, userMove: game.userMove});
+                })
+            }
         }
     })
 
