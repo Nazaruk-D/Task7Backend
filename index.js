@@ -8,7 +8,7 @@ const {calculateWinner} = require("./calculateWinnerTikTakToe");
 const server = http.createServer(app);
 
 const corsOptions = {
-    origin: ['http://localhost:3000', 'https://task7-zeta.vercel.app'],
+    origin: '*',
     methods: ['GET', 'POST'],
     optionsSuccessStatus: 200,
 };
@@ -17,7 +17,7 @@ app.use(cors(corsOptions));
 
 const io = require('socket.io')(server, {
     cors: {
-        origin: ['http://localhost:3000', 'https://task7-zeta.vercel.app'],
+        origin: '*',
         methods: ['GET', 'POST'],
         credentials: true
     }
