@@ -166,6 +166,38 @@ io.on('connection', (socket) => {
         playerIds.forEach((id) => {
             io.to(id).emit('game-over', {gameId, info});
         })
+
+        if (gameName === "bullsAndCows") {
+            bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+        } else if (gameName === "tikTakToe") {
+            tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+        }
+    })
+
+    socket.on('game-over-timer', (data) => {
+        const gameId = data.gameId;
+        const gameName = data.gameName;
+        const userId = data.userId
+
+
+        let game;
+        if (gameName === "bullsAndCows") {
+            game = bullsAndCowsGames.find((g) => g.id === gameId);
+        } else if (gameName === "tikTakToe") {
+            game = tikTakToe.find((g) => g.id === gameId);
+        }
+
+        const playerIds = game.players.map((p) => p.id);
+        const winner = game.players.find( p => p.id !== userId)
+        playerIds.forEach((id) => {
+            io.to(id).emit('game-over-timer', {winner});
+        })
+
+        if (gameName === "bullsAndCows") {
+            bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+        } else if (gameName === "tikTakToe") {
+            tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+        }
     })
 });
 
