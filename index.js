@@ -89,13 +89,10 @@ io.on('connection', (socket) => {
         const number = data.number
 
         let game = bullsAndCowsGames.find((g) => g.id === gameId);
-        // const [player1, player2] = game.players.map((p) => p.name);
         const [id1, id2] = game.players.map((p) => p.id);
         const firstPlayer = flipCoin() ? id1 : id2;
-
         const playerIndex = game.players.findIndex((p) => p.id === playerId);
         game.players[playerIndex].number = number;
-
         if (game.players.every((p) => p.number !== undefined)) {
             io.to(id1).to(id2).emit('start-game-move', {
                 gameId: game.id,
@@ -125,7 +122,7 @@ io.on('connection', (socket) => {
             const playerIds = game.players.map((p) => p.id);
             if(bulls === 4) {
                 playerIds.forEach((id) => {
-                    io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMove, bulls, cows});
+                    io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMoveId: game.userMoveId, bulls, cows, winner: game.userMoveId});
                 })
             } else {
                 playerIds.forEach((id) => {
@@ -135,7 +132,8 @@ io.on('connection', (socket) => {
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
             game.board = board;
-            const winner = calculateWinner(board, userMove, stepNumber);
+            const winner = calculateWinner(board, game.userMoveId, stepNumber);
+            /////Пересмотреть логику и что возвращает функция
             const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
             const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
             game.userMoveId = game.players[nextPlayerIndex].id;
