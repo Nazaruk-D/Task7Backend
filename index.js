@@ -133,7 +133,6 @@ io.on('connection', (socket) => {
             game = tikTakToe.find((g) => g.id === gameId);
             game.board = board;
             const winner = calculateWinner(board, game.userMoveId, stepNumber);
-            /////Пересмотреть логику и что возвращает функция
             const currentPlayerIndex = game.players.findIndex((player) => player.id === playerId);
             const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
             game.userMoveId = game.players[nextPlayerIndex].id;
