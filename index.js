@@ -40,6 +40,27 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
+        let game;
+        let player;
+        for (const g of tikTakToe.concat(bullsAndCowsGames)) {
+            player = g.players.find((p) => p.id === socket.id);
+            if (player) {
+                game = g;
+                break;
+            }
+        }
+        if (game) {
+            const otherPlayer = game.players.find((p) => p.id !== socket.id);
+            if (otherPlayer) {
+                const message = "opponent disconnected"
+                io.to(otherPlayer.id).emit('game-over', {gameId: game.id, gameName: game.gameName, winner: otherPlayer.id, message});
+            }
+            if (game.gameName === 'tikTakToe') {
+                tikTakToe = tikTakToe.filter((g) => g.id !== game.id);
+            } else {
+                bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== game.id);
+            }
+        }
     });
 
     socket.on('set-name', (name) => {
@@ -51,8 +72,6 @@ io.on('connection', (socket) => {
         const gameId = data.gameId;
         const gameName = data.gameName;
         const playerName = data.playerName;
-
-        console.log("BUUULSGAMES: ", bullsAndCowsGames[0])
 
         let game;
         if (gameName === "bullsAndCows") {
@@ -172,13 +191,13 @@ io.on('connection', (socket) => {
         })
 
         ////REMOVE
-        if (gameName === "bullsAndCows") {
-            // console.log("POPAL SUDA!!!!!!!")
-            bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
-            console.log("BULLSARRAY: ", bullsAndCowsGames)
-        } else if (gameName === "tikTakToe") {
-            tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
-        }
+        // if (gameName === "bullsAndCows") {
+        //     // console.log("POPAL SUDA!!!!!!!")
+        //     bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+        //     console.log("BULLSARRAY: ", bullsAndCowsGames)
+        // } else if (gameName === "tikTakToe") {
+        //     tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+        // }
     })
 
     socket.on('game-over-timer', (data) => {
