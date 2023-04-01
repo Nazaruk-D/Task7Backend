@@ -186,7 +186,7 @@ io.on('connection', (socket) => {
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
         }
-
+        console.log("GAME: ", game)
         const playerIds = game.players.map((p) => p.id);
         const winner = game.players.find( p => p.id !== userId)
         playerIds.forEach((id) => {
