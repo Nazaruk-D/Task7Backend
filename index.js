@@ -52,6 +52,8 @@ io.on('connection', (socket) => {
         const gameName = data.gameName;
         const playerName = data.playerName;
 
+        console.log("BUUULSGAMES: ", bullsAndCowsGames[0])
+
         let game;
         if (gameName === "bullsAndCows") {
             game = findOrCreateGame(bullsAndCowsGames, gameName, gameId);
@@ -123,6 +125,7 @@ io.on('connection', (socket) => {
             if(bulls === 4) {
                 playerIds.forEach((id) => {
                     io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMoveId: game.userMoveId, bulls, cows, winner: game.userMoveId});
+                    bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
                 })
             } else {
                 playerIds.forEach((id) => {
@@ -140,6 +143,7 @@ io.on('connection', (socket) => {
             if(winner){
                 playerIds.forEach((id) => {
                     io.to(id).emit('game-over', {gameId, board, gameName: game.gameName, userMoveId: game.userMoveId, winner});
+                    tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
                 })
             } else {
                 playerIds.forEach((id) => {
@@ -167,8 +171,11 @@ io.on('connection', (socket) => {
             io.to(id).emit('game-over', {gameId, info});
         })
 
+        ////REMOVE
         if (gameName === "bullsAndCows") {
+            // console.log("POPAL SUDA!!!!!!!")
             bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+            console.log("BULLSARRAY: ", bullsAndCowsGames)
         } else if (gameName === "tikTakToe") {
             tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
         }
@@ -194,11 +201,14 @@ io.on('connection', (socket) => {
                 io.to(id).emit('game-over-timer', {winner});
             })
 
-            if (gameName === "bullsAndCows") {
-                bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
-            } else if (gameName === "tikTakToe") {
-                tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
-            }
+            // if (gameName === "bullsAndCows") {
+            //     bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+            // } else if (gameName === "tikTakToe") {
+            //     tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+            // }
+
+            const index = tikTakToe.indexOf(game);
+            tikTakToe.splice(index, 1);
         }
     })
 });
