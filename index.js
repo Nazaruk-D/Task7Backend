@@ -201,14 +201,14 @@ io.on('connection', (socket) => {
                 io.to(id).emit('game-over-timer', {winner});
             })
 
-            // if (gameName === "bullsAndCows") {
-            //     bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
-            // } else if (gameName === "tikTakToe") {
-            //     tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
-            // }
+            if (gameName === "bullsAndCows") {
+                bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+            } else if (gameName === "tikTakToe") {
+                tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+            }
 
-            const index = tikTakToe.indexOf(game);
-            tikTakToe.splice(index, 1);
+            // const index = tikTakToe.indexOf(game);
+            // tikTakToe.splice(index, 1);
         }
     })
 });
