@@ -186,17 +186,19 @@ io.on('connection', (socket) => {
         } else if (gameName === "tikTakToe") {
             game = tikTakToe.find((g) => g.id === gameId);
         }
-        console.log("GAME: ", game)
-        const playerIds = game.players.map((p) => p.id);
-        const winner = game.players.find( p => p.id !== userId)
-        playerIds.forEach((id) => {
-            io.to(id).emit('game-over-timer', {winner});
-        })
 
-        if (gameName === "bullsAndCows") {
-            bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
-        } else if (gameName === "tikTakToe") {
-            tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+        if (game) {
+            const playerIds = game.players.map((p) => p.id);
+            const winner = game.players.find( p => p.id !== userId)
+            playerIds.forEach((id) => {
+                io.to(id).emit('game-over-timer', {winner});
+            })
+
+            if (gameName === "bullsAndCows") {
+                bullsAndCowsGames = bullsAndCowsGames.filter((g) => g.id !== gameId);
+            } else if (gameName === "tikTakToe") {
+                tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
+            }
         }
     })
 });
