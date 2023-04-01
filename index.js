@@ -206,8 +206,6 @@ io.on('connection', (socket) => {
             } else if (gameName === "tikTakToe") {
                 tikTakToe = tikTakToe.filter((g) => g.id !== gameId);
             }
-            // const index = tikTakToe.indexOf(game);
-            // tikTakToe.splice(index, 1);
         }
     })
 });
